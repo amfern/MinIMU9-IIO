@@ -1,0 +1,77 @@
+[package]
+name = "minimu9-iio"
+version = "0.0.1"
+authors = ["Ilya Guterman <amfernusus@gmail.com>"]
+edition = "2018"
+license = "MIT OR Apache-2.0"
+description = "MinIMU9-IIO poller"
+repository = "https://github.com/amfern"
+readme = "README.md"
+categories = ["asynchronous", "embedded", "command-line-utilities"]
+keywords = ["iio"]
+
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+futures = "0.3.8"
+glob = "0.3.0"
+
+[dependencies.async-std]
+version = "1.7.0"
+features = ["unstable", "attributes"]
+
+
+[tasks.clean]
+command = "cargo"
+args = ["clean"]
+
+[tasks.release]
+command = "cargo"
+args = ["build", "--release"]
+dependencies = ["clean"]
+
+[tasks.mkdir-dist]
+command = "docker"
+args = ["cp ", "--volume", "${PWD}:/root/src", "--workdir", "/root/src", "joseluisq/rust-linux-darwin-builder:1.43.0", "cargo", "build", "--release", "--target", "x86_64-apple-darwin"]
+dependencies = ["clean"]
+
+[tasks.release-darwin]
+command = "docker"
+args = ["run", "--rm", "--volume", "${PWD}:/root/src", "--workdir", "/root/src", "joseluisq/rust-linux-darwin-builder:1.43.0", "cargo", "build", "--release", "--target", "x86_64-apple-darwin"]
+dependencies = ["clean"]
+
+[tasks.release-windows]
+command = "cross"
+args = ["build", "--target", "x86_64-pc-windows-gnu", "--release"]
+dependencies = ["clean"]
+
+[tasks.release-arm]
+command = "cross"
+args = ["build", "--target", "arm-unknown-linux-musleabihf", "--release"]
+dependencies = ["clean"]
+
+[tasks.release-armv7]
+command = "cross"
+args = ["build", "--target", "armv7-unknown-linux-musleabihf", "--release"]
+dependencies = ["clean"]
+
+[tasks.dist-folder]
+command = "mkdir"
+args = ["-p", "dist"]
+
+[tasks.copy-to-dist]
+script = [
+    "cp target/x86_64-pc-windows-gnu/release/minimu9-iio.exe dist/minimu9-iio_windows.exe",
+    "cp target/x86_64-apple-darwin/release/minimu9-iio dist/minimu9-iio_darwin",
+    "cp target/release/minimu9-iio dist/minimu9-iio_linux",
+]
+dependencies = ["dist-folder"]
+
+[tasks.release-all]
+dependencies = [
+    "release",
+    "release-darwin",
+    "release-windows",
+    "copy-to-dist",
+]
